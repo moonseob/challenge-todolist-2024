@@ -94,13 +94,15 @@ section#input {
   }
 }
 
-[role="listitem"] {
+.list-item {
   padding: 10px;
-  display: flex;
   gap: 5px;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgb(201 201 201);
+  &:not([hidden]) {
+    display: flex;
+  }
   & span {
     min-width: 0;
     overflow-wrap: break-word;
@@ -110,7 +112,7 @@ section#input {
     flex: 0 0 auto;
   }
 }
-:is([role="listitem"].completed) {
+.list-item.completed {
   color: var(--color-disabled);
   & span {
     text-decoration: line-through;

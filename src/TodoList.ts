@@ -1,109 +1,72 @@
-import DOMController from './DOMController';
+import { ListFilter } from './models';
+import TodoItem from './TodoItem';
 
-class TodoItem {
-  private controller: DOMController;
-
-  completed = false;
-  el: HTMLLIElement;
-  id = self.crypto.randomUUID();
-  createdAt: number;
-  lastUpdatedAt: number;
-
-  constructor(
-    public content: string,
-    private onUpdate: () => void,
-    private onDestory: (id: typeof this.id) => void,
-  ) {
-    const now = new Date().valueOf();
-    this.createdAt = now;
-    this.lastUpdatedAt = now;
-
-    this.controller = new DOMController(document.createElement('span'));
-    this.controller.update(content);
-    const deleteButton = document.createElement('button');
-    deleteButton.type = 'button';
-    deleteButton.classList.add('remove-button');
-    deleteButton.textContent = 'Remove';
-    deleteButton.onclick = (event) => {
-      event.stopPropagation();
-      this.destroy();
-    };
-
-    const li = document.createElement('li');
-    li.appendChild(this.controller.el);
-    li.appendChild(deleteButton);
-    li.addEventListener('click', this.toggle.bind(this)); // TODO: should prevent drag event
-    li.setAttribute('role', 'listitem');
-    this.el = li;
-  }
-
-  toggle() {
-    this.completed = !this.completed;
-    if (this.completed) {
-      this.el.classList.add('completed');
-    } else {
-      this.el.classList.remove('completed');
-    }
-    this.lastUpdatedAt = new Date().valueOf();
-    this.onUpdate();
-  }
-
-  // update(content: string) {
-  //   this.content = content;
-  //   this.lastUpdatedAt = new Date().valueOf();
-  // }
-
-  destroy() {
-    this.el.remove();
-    this.el.replaceWith(this.el.cloneNode(true)); // remove event listeners
-    this.el = null as never;
-    this.onDestory(this.id);
-    this.onDestory = null as never;
-  }
-}
-
+/** manage TodoItems and reflect changes to DOM */
 export default class TodoList {
-  private todos: TodoItem[] = [];
-  constructor(
-    private listContainer: HTMLUListElement,
-    private updateCallback: () => void,
-  ) {}
+  private _todos: TodoItem[] = [];
+  /** a callback for side effects. For now it has nothing to do with list itself. */
+  private _updateCallback: (() => void) | undefined;
+  constructor(private _containerEl: HTMLUListElement) {}
 
-  private onUpdate() {
-    this.updateCallback();
+  private _onUpdate() {
+    this._updateCallback?.();
     // TODO: sort todos
     // TODO: render todos
   }
 
-  private handleDestroy(id: TodoItem['id']) {
-    this.todos = this.todos.filter((x) => x.id !== id);
-    this.onUpdate();
+  private _handleDestroy(id: TodoItem['id']) {
+    this._todos = this._todos.filter((x) => x.id !== id);
+    this._onUpdate();
+  }
+
+  set onUpdate(cb: NonNullable<typeof this._updateCallback>) {
+    this._updateCallback = cb;
   }
 
   get totalCount() {
-    return this.todos.length;
+    return this._todos.filter((x) => !x.hidden).length;
   }
 
   get completedCount() {
-    return this.todos.filter((x) => x.completed).length;
+    return this._todos.filter((x) => x.completed).length;
   }
 
   addItem(content: string) {
-    const item = new TodoItem(content, this.onUpdate.bind(this), this.handleDestroy.bind(this));
-    this.todos.push(item);
-    this.listContainer.appendChild(item.el);
-    this.onUpdate();
+    const item = new TodoItem(content);
+    item.onUpdate = this._onUpdate.bind(this);
+    item.onDestroy = this._handleDestroy.bind(this);
+    this._todos.push(item);
+    this._containerEl.appendChild(item.el);
+    this._onUpdate();
   }
 
   toggleStatus(id: TodoItem['id']) {
-    this.todos.find((x) => x.id === id)?.toggle();
+    this._todos.find((x) => x.id === id)?.toggleCompleted();
   }
 
   clearCompletedItems() {
-    for (const item of this.todos) {
+    for (const item of this._todos) {
       if (item.completed) {
-        item.destroy();
+        item.destroy(); // TODO: need to reduce the occurrence of DOM manipulations
       }
+    }
+  }
+
+  setListFilter(filter: ListFilter) {
+    for (const item of this._todos) {
+      let isHidden = false;
+      switch (filter) {
+        case 'all':
+          isHidden = false;
+          break;
+        case 'active':
+          isHidden = item.completed;
+          break;
+        case 'completed':
+          isHidden = !item.completed;
+          break;
+      }
+      item.setHidden(isHidden); // TODO: need to reduce the occurrence of DOM manipulations
     }
   }
 }

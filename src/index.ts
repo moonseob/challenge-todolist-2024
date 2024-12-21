@@ -1,29 +1,50 @@
 import './styles.css';
 
-import Counter from './Counter';
+import CounterController from './CounterController';
+import RadioManager from './RadioManager';
 import TodoList from './TodoList';
+import { ListFilter } from './models';
 
-const container = document.querySelector('#list-container') as HTMLUListElement;
-const todolist = new TodoList(container, onTodoListChange);
-const leftItemsCount = new Counter(document.getElementById('left-items-count')!);
-const completedItemsCount = new Counter(document.getElementById('completed-items-count')!);
+// Access essential DOM elements for the application
+const container = document.getElementById('list-container') as HTMLUListElement;
+const leftItemsCount = new CounterController(document.getElementById('left-items-count') as HTMLElement);
+const completedItemsCount = new CounterController(
+  document.getElementById('completed-items-count') as HTMLElement,
+);
 const clearCompletedButton = document.getElementById('clear-completed-button') as HTMLButtonElement;
+const textInput = document.getElementById('text-input') as HTMLInputElement;
 
-(document.querySelector('#text-input') as HTMLInputElement).addEventListener('keydown', (event) => {
+// Initialize the TodoList and define its update behavior
+const todolist = new TodoList(container);
+const onTodoListChange = () => {
+  leftItemsCount.set(todolist.totalCount);
+  completedItemsCount.set(todolist.completedCount);
+};
+// Update Counter elements whenever the Todo list changes
+todolist.onUpdate = onTodoListChange;
+
+/** Handle new TodoItem submission. */
+textInput.addEventListener('keydown', (event) => {
   const target = event.target as HTMLInputElement;
   if (event.key === 'Enter') {
-    if (typeof target.value !== 'string' || target.value === '') {
+    if (typeof target.value !== 'string' || target.value.trim() === '') {
       return;
     }
     event.preventDefault();
-    todolist.addItem(target.value);
+    todolist.addItem(target.value.trim());
     target.value = '';
   }
 });
 
-function onTodoListChange() {
-  leftItemsCount.set(todolist.totalCount);
-  completedItemsCount.set(todolist.completedCount);
-}
-
+/** Clear all completed Todo items. */
 clearCompletedButton.addEventListener('click', () => todolist.clearCompletedItems());
+
+// Manage the Todo list view filter
+const radio = new RadioManager<ListFilter>('filter');
+radio.onChange = (v) => {
+  todolist.setListFilter(v);
+  onTodoListChange();
+};
+
+// Render the initial state of the Todo list
+onTodoListChange();
