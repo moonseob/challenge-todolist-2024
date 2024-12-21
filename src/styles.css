@@ -1,8 +1,14 @@
 :root {
-  color-scheme: light;
+  color-scheme: light; /* disallow dark mode; "dark palette" does not exist */
   --color-disabled: rgb(177 177 177);
+  --color-outline: rgb(188 106 94);
   --color-selected: rgb(194 65 34);
   --color-overlay: rgb(92 165 60);
+  --color-background: rgb(255 255 255);
+}
+
+:focus-visible {
+  outline-color: var(--color-outline);
 }
 
 body {
@@ -16,19 +22,63 @@ ul {
   list-style: none;
 }
 
+button,
+.filter-button {
+  font-size: 0.8em;
+  font-family: inherit;
+  align-content: center;
+  color: black;
+  background-color: rgb(237 237 237);
+  border: 1px solid rgb(118 118 118);
+  padding: 0.3em 0.5em;
+  border-radius: 2px;
+  user-select: none;
+  &:hover {
+    background-color: rgb(229 229 229);
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  border: 0;
+  padding: 0;
+  white-space: nowrap;
+  clip-path: inset(100%);
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+}
+
 .flex-spacer {
   flex: 1 1 auto;
 }
 
 main {
-  margin: 1em;
+  margin: 100px auto;
   border: 2px solid rgb(87 87 87);
-  padding: 1em;
+  padding: 0 1em;
   width: 650px;
+  max-width: 100%;
+  box-sizing: border-box;
+  background-color: white;
 }
 
 section ~ section {
   margin-top: 1em;
+}
+
+section#input,
+section#actions {
+  background-color: var(--color-background); /* fallback */
+  background-color: color-mix(in srgb, var(--color-background) 90%, transparent);
+  position: sticky;
+}
+
+section#input {
+  padding-top: 1em;
+  top: 0;
 }
 
 #text-input {
@@ -36,9 +86,11 @@ section ~ section {
   padding: 0 1em;
   width: 100%;
   box-sizing: border-box;
+  background-color: transparent;
+  font-size: 16px;
   border: 1px dashed rgb(182 106 96);
   &:focus {
-    outline: 1px solid rgb(188 106 94);
+    outline: 1px solid var(--color-outline);
   }
 }
 
@@ -65,16 +117,33 @@ section ~ section {
   }
 }
 
-.action-bar {
+section#actions {
+  padding: 1em 0;
+  margin-top: 0;
+  bottom: 0;
   display: flex;
-  align-items: center;
   gap: 5px;
-  height: 34px;
-  & button {
-    height: 100%;
-  }
+  flex-wrap: wrap;
+  align-items: center;
+}
+:where(section#actions) > div {
+  flex: 1 1 0%;
 }
 
+[role="radiogroup"] {
+  height: 100%;
+  gap: 5px;
+  display: flex;
+}
+
+.filter-button:has(input[type="radio"]:checked) {
+  color: var(--color-selected);
+}
+.filter-button:focus-visible,
+.filter-button:has(input[type="radio"]:focus-visible) {
+  outline: 2px solid var(--color-outline);
+  outline-offset: -1px;
+}
 .filter-button.active {
   color: var(--color-selected);
 }

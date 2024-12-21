@@ -9,20 +9,33 @@
 
 <body>
   <main>
-    <section>
+    <section id="input">
       <input type="text" id="text-input" placeholder="What needs to be done?" autocomplete="off">
     </section>
-    <section>
+    <section id="list">
       <ul id="list-container" role="list"></ul>
     </section>
-    <section class="action-bar">
-      <span><span id="left-items-count">0</span> items left</span>
-      <div class="flex-spacer"></div>
-      <button class="filter-button" type="button">All</button>
-      <button class="filter-button" type="button">Active</button>
-      <button class="filter-button" type="button">Completed</button>
-      <div class="flex-spacer"></div>
-      <button id="clear-completed-button">Clear completed (<span id="completed-items-count">0</span>)</button>
+    <section id="actions">
+      <div style="text-align: start; white-space: nowrap;">
+        <span><span id="left-items-count">0</span> items left</span>
+      </div>
+      <div role="radiogroup" aria-label="Filter todo list">
+        <label class="filter-button">
+          <input class="visually-hidden" type="radio" name="filter" value="all" checked>
+          All
+        </label>
+        <label class="filter-button">
+          <input class="visually-hidden" type="radio" name="filter" value="active">
+          Active
+        </label>
+        <label class="filter-button">
+          <input class="visually-hidden" type="radio" name="filter" value="completed">
+          Completed
+        </label>
+      </div>
+      <div style="flex: 0 0 auto;">
+        <button id="clear-completed-button" style="height: 100%">Clear completed (<span id="completed-items-count">0</span>)</button>
+      </div>
       </div>
     </section>
   </main>
