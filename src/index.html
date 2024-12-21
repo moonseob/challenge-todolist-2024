@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo list2</title>
+</head>
+
+<body>
+  <main>
+    <section>
+      <input type="text" id="text-input" placeholder="What needs to be done?">
+    </section>
+    <section>
+      <ul id="list-container" role="list">
+        <li role="listitem">
+          <span>Todo1</span>
+          <button class="remove-button">Remove</button>
+        </li>
+      </ul>
+    </section>
+    <section class="action-bar">
+      <span><span id="left-items-count">0</span> items left</span>
+      <div class="flex-spacer"></div>
+      <button class="filter-button" type="button">All</button>
+      <button class="filter-button" type="button">Active</button>
+      <button class="filter-button" type="button">Completed</button>
+      <div class="flex-spacer"></div>
+      <button>Clear completed (<span id="completed-items-count">0</span>)</button>
+      </div>
+    </section>
+  </main>
+</body>
+
+</html>
