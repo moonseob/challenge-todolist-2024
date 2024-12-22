@@ -12,8 +12,8 @@ export default class TodoList {
   }
 
   private _onUpdate() {
-    this._saveToLocalStorage();
     this._updateCallback?.();
+    setTimeout(() => this._saveToLocalStorage()); // To ensure write after all DOM changes are done
     // TODO: sort todos
     // TODO: render todos
   }
