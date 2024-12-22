@@ -1,12 +1,14 @@
+import TodoList from './TodoList';
+
 type ListitemElement = HTMLElement;
 
 export default class DraggableController {
   private _draggedElement: HTMLElement | null = null;
   private _mirrorElement: HTMLElement | null = null;
   private _isDragging = false;
-  private _hoverTimer: number | null = null;
   private _offsetX: number = 0;
   private _offsetY: number = 0;
+  private _onDrop: TodoList['swapItemsByIndex'] | undefined;
 
   constructor(private container: HTMLElement) {
     this.container.addEventListener('mousedown', this._onMouseDown.bind(this));
@@ -15,6 +17,10 @@ export default class DraggableController {
     document.addEventListener('keydown', this._onKeyDown.bind(this));
     this.container.addEventListener('mouseenter', this._onMouseEnterListItem.bind(this), true);
     this.container.addEventListener('mouseleave', this._onMouseLeaveListItem.bind(this), true);
+  }
+
+  set onDrop(cb: typeof this._onDrop) {
+    this._onDrop = cb;
   }
 
   private _getListitemElement(el: HTMLElement): ListitemElement;
@@ -85,6 +91,7 @@ export default class DraggableController {
     }
     const draggedIndex = Array.from(this.container.children).indexOf(this._draggedElement);
     const targetIndex = Array.from(this.container.children).indexOf(target);
+    this._onDrop?.(draggedIndex, targetIndex);
     if (draggedIndex < targetIndex) {
       this.container.insertBefore(this._draggedElement, target.nextSibling);
     } else if (draggedIndex > targetIndex) {
@@ -135,16 +142,7 @@ export default class DraggableController {
       document.body.removeChild(this._mirrorElement);
       this._mirrorElement = null;
     }
-    if (this._draggedElement) {
-      this._draggedElement.classList.remove('preview');
-      this._draggedElement = null;
-    }
-    if (this._hoverTimer) {
-      clearTimeout(this._hoverTimer);
-      this._hoverTimer = null;
-    }
-    this._offsetX = 0;
-    this._offsetY = 0;
+    this._draggedElement = null;
     this.container.querySelectorAll('.drag-over').forEach((el) => {
       el.classList.remove('drag-over');
     });
