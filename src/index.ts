@@ -24,7 +24,7 @@ const onTodoListChange = () => {
 todolist.onUpdate = onTodoListChange;
 
 /** Handle new TodoItem submission. */
-textInput.addEventListener('keydown', (event) => {
+function handleEnterKey(event: KeyboardEvent) {
   const target = event.target as HTMLInputElement;
   if (event.key === 'Enter') {
     if (typeof target.value !== 'string' || target.value.trim() === '') {
@@ -34,10 +34,16 @@ textInput.addEventListener('keydown', (event) => {
     todolist.addItem(target.value.trim());
     target.value = '';
   }
-});
+}
+textInput.removeEventListener('keydown', handleEnterKey); // cleanup for development
+textInput.addEventListener('keydown', handleEnterKey);
 
 /** Clear all completed Todo items. */
-clearCompletedButton.addEventListener('click', () => todolist.clearCompletedItems());
+function handleCompletedButtonClick() {
+  todolist.clearCompletedItems();
+}
+clearCompletedButton.removeEventListener('click', handleCompletedButtonClick); // cleanup for development
+clearCompletedButton.addEventListener('click', handleCompletedButtonClick);
 
 // Manage the Todo list view filter
 const radio = new RadioManager<ListFilter>('filter');
