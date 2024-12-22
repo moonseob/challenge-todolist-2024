@@ -1,6 +1,13 @@
 import DOMController from './DOMController';
 
-export default class TodoItem {
+export interface ITodoItem {
+  id: string;
+  content: string;
+  completed: boolean;
+  hidden: boolean;
+}
+
+export default class TodoItem implements ITodoItem {
   private _controller: DOMController;
   private _onUpdate: (() => void) | undefined;
   private _onDestroy: ((id: typeof this.id) => void) | undefined;
@@ -8,14 +15,18 @@ export default class TodoItem {
   completed = false;
   hidden = false;
   el: HTMLLIElement;
-  id = self.crypto.randomUUID();
+  id: string;
   createdAt: number;
   lastUpdatedAt: number;
 
-  constructor(public content: string) {
+  constructor(
+    public content: string,
+    id?: string,
+  ) {
     const now = new Date().valueOf();
     this.createdAt = now;
     this.lastUpdatedAt = now;
+    this.id = id || self.crypto.randomUUID();
 
     this._controller = new DOMController(document.createElement('span'));
     this._controller.update(content);
