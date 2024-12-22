@@ -3,7 +3,7 @@
   --color-disabled: rgb(177 177 177);
   --color-outline: rgb(188 106 94);
   --color-selected: rgb(194 65 34);
-  --color-overlay: rgb(92 165 60);
+  --color-dragover: rgb(92 165 60);
   --color-background: rgb(255 255 255);
 }
 
@@ -14,6 +14,10 @@
 body {
   margin: 0;
   font-family: sans-serif;
+}
+body.dragging {
+  user-select: none;
+  /* pointer-events: none; */
 }
 
 ul {
@@ -94,7 +98,12 @@ section#input {
   }
 }
 
+#list-container {
+  position: realtive;
+}
+
 .list-item {
+  touch-action: none;
   padding: 10px;
   gap: 5px;
   align-items: center;
@@ -117,6 +126,9 @@ section#input {
   & span {
     text-decoration: line-through;
   }
+}
+.list-item.drag-over {
+  box-shadow: inset 3px 0 0 var(--color-dragover);
 }
 
 section#actions {

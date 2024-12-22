@@ -23,6 +23,42 @@ export default class TodoList {
     this._onUpdate();
   }
 
+  /** Save current state to localStorage */
+  private _saveToLocalStorage() {
+    const data: ITodoItem[] = this._todos.map((item) => ({
+      id: item.id,
+      content: item.content,
+      completed: item.completed,
+      hidden: item.hidden,
+    }));
+    localStorage.setItem('todoList', JSON.stringify(data));
+  }
+
+  /** Load state from localStorage */
+  private _loadFromLocalStorage() {
+    const data = localStorage.getItem('todoList');
+    if (data) {
+      try {
+        const todos: ITodoItem[] = JSON.parse(data);
+        const fragment = document.createDocumentFragment();
+        todos.forEach(({ id, content, completed, hidden }) => {
+          const item = new TodoItem(content, id);
+          item.onUpdate = this._onUpdate.bind(this);
+          item.onDestroy = this._handleDestroy.bind(this);
+          if (completed) item.toggleCompleted();
+          item.setHidden(hidden);
+          this._todos.push(item);
+          fragment.appendChild(item.el);
+        });
+        this._containerEl.innerHTML = '';
+        this._containerEl.appendChild(fragment);
+      } catch (error) {
+        console.warn('Failed to load todos from localStorage:', error);
+        localStorage.removeItem('todoList');
+      }
+    }
+  }
+
   set onUpdate(cb: NonNullable<typeof this._updateCallback>) {
     this._updateCallback = cb;
   }
@@ -77,39 +113,9 @@ export default class TodoList {
     this._onUpdate();
   }
 
-  /** Save current state to localStorage */
-  private _saveToLocalStorage() {
-    const data: ITodoItem[] = this._todos.map((item) => ({
-      id: item.id,
-      content: item.content,
-      completed: item.completed,
-      hidden: item.hidden,
-    }));
-    localStorage.setItem('todoList', JSON.stringify(data));
-  }
-
-  /** Load state from localStorage */
-  private _loadFromLocalStorage() {
-    const data = localStorage.getItem('todoList');
-    if (data) {
-      try {
-        const todos: ITodoItem[] = JSON.parse(data);
-        const fragment = document.createDocumentFragment();
-        todos.forEach(({ id, content, completed, hidden }) => {
-          const item = new TodoItem(content, id);
-          item.onUpdate = this._onUpdate.bind(this);
-          item.onDestroy = this._handleDestroy.bind(this);
-          if (completed) item.toggleCompleted();
-          item.setHidden(hidden);
-          this._todos.push(item);
-          fragment.appendChild(item.el);
-        });
-        this._containerEl.innerHTML = '';
-        this._containerEl.appendChild(fragment);
-      } catch (error) {
-        console.warn('Failed to load todos from localStorage:', error);
-        localStorage.removeItem('todoList');
-      }
-    }
+  swapItemsByIndex(draggedIndex: number, targetIndex: number) {
+    const [draggedItem] = this._todos.splice(draggedIndex, 1);
+    this._todos.splice(targetIndex, 0, draggedItem);
+    this._onUpdate();
   }
 }
