@@ -1,6 +1,7 @@
 import './styles.css';
 
 import CounterController from './CounterController';
+import DraggableController from './DraggableController';
 import RadioManager from './RadioManager';
 import TodoList from './TodoList';
 import { ListFilter } from './models';
@@ -22,6 +23,9 @@ const onTodoListChange = () => {
 };
 // Update Counter elements whenever the Todo list changes
 todolist.onUpdate = onTodoListChange;
+
+// register draggable controller
+new DraggableController(container);
 
 /** Handle new TodoItem submission. */
 function handleEnterKey(event: KeyboardEvent) {
