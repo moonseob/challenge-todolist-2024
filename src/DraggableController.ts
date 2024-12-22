@@ -55,10 +55,10 @@ export default class DraggableController {
     this._draggedElement = listitemElement;
     this._isDragging = true;
 
-    // get relative position of cursor
+    // get relative position of cursor with scroll adjustments
     const rect = listitemElement.getBoundingClientRect();
-    this._offsetX = event.clientX - rect.left;
-    this._offsetY = event.clientY - rect.top;
+    this._offsetX = event.clientX - (rect.left + window.scrollX);
+    this._offsetY = event.clientY - (rect.top + window.scrollY);
 
     document.body.classList.add('dragging');
     this._createMirrorElement(listitemElement);
@@ -116,8 +116,8 @@ export default class DraggableController {
     this._mirrorElement.style.boxSizing = 'border-box';
     this._mirrorElement.style.width = `${rect.width}px`;
     this._mirrorElement.style.height = `${rect.height}px`;
-    this._mirrorElement.style.left = `${rect.x}px`;
-    this._mirrorElement.style.top = `${rect.y}px`;
+    this._mirrorElement.style.left = `${rect.x + window.scrollX}px`;
+    this._mirrorElement.style.top = `${rect.y + window.scrollY}px`;
 
     // render
     document.body.append(this._mirrorElement);
