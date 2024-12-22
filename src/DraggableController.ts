@@ -1,26 +1,40 @@
-import TodoList from './TodoList';
+import type TodoList from './TodoList';
 
 type ListitemElement = HTMLElement;
 
 export default class DraggableController {
+  private _container: HTMLElement;
+
+  private _isDragging = false;
+  private _offsetX = 0;
+  private _offsetY = 0;
   private _draggedElement: HTMLElement | null = null;
   private _mirrorElement: HTMLElement | null = null;
-  private _isDragging = false;
-  private _offsetX: number = 0;
-  private _offsetY: number = 0;
-  private _onDrop: TodoList['swapItemsByIndex'] | undefined;
 
-  constructor(private container: HTMLElement) {
-    this.container.addEventListener('mousedown', this._onMouseDown.bind(this));
+  private _hoverTimer: number | null = null;
+  private _isPreviewActive = false;
+  private _rollbackRefEl: Element | null = null;
+  /** the nextElementSibling when it's at its original position */
+  private _previewOriginalIndex: number | null = null;
+
+  private _commitIndexSwap: TodoList['swapItemsByIndex'] | undefined;
+
+  constructor(container: HTMLElement) {
+    this._container = container;
+    this._addEventListeners();
+  }
+
+  set onIndexSwap(cb: typeof this._commitIndexSwap) {
+    this._commitIndexSwap = cb;
+  }
+
+  private _addEventListeners() {
+    this._container.addEventListener('mousedown', this._onMouseDown.bind(this));
+    this._container.addEventListener('mouseenter', this._onMouseEnterListItem.bind(this), true);
+    this._container.addEventListener('mouseleave', this._onMouseLeaveListItem.bind(this), true);
     document.addEventListener('mousemove', this._onMouseMove.bind(this));
     document.addEventListener('mouseup', this._onMouseUp.bind(this));
     document.addEventListener('keydown', this._onKeyDown.bind(this));
-    this.container.addEventListener('mouseenter', this._onMouseEnterListItem.bind(this), true);
-    this.container.addEventListener('mouseleave', this._onMouseLeaveListItem.bind(this), true);
-  }
-
-  set onDrop(cb: typeof this._onDrop) {
-    this._onDrop = cb;
   }
 
   private _getListitemElement(el: HTMLElement): ListitemElement;
@@ -28,7 +42,7 @@ export default class DraggableController {
   private _getListitemElement(el: HTMLElement | null): ListitemElement | null {
     let result: HTMLElement | null = el;
 
-    while (result && result !== this.container) {
+    while (result && result !== this._container) {
       if (result.getAttribute('role') === 'listitem') {
         break;
       }
@@ -39,9 +53,8 @@ export default class DraggableController {
 
   private _onMouseDown(event: MouseEvent) {
     const target = event.target as HTMLElement;
-    if (target?.tagName === 'BUTTON') {
-      return;
-    }
+    if (target?.tagName === 'BUTTON') return;
+
     const listitemElement = this._getListitemElement(target);
     if (
       listitemElement === null ||
@@ -52,6 +65,8 @@ export default class DraggableController {
     }
 
     this._draggedElement = listitemElement;
+    this._rollbackRefEl = listitemElement.nextElementSibling;
+    this._previewOriginalIndex = Array.from(this._container.children).indexOf(listitemElement);
     this._isDragging = true;
 
     // get relative position of cursor with scroll adjustments
@@ -74,32 +89,78 @@ export default class DraggableController {
     if (!this._isDragging || !this._draggedElement) return;
 
     const dropTarget = document.elementFromPoint(event.clientX, event.clientY);
-    if (this.container.contains(dropTarget) === false) {
+    if (this._container.contains(dropTarget) === false) {
       console.log('Drag canceled: Mouse left the container.');
+      this._rollbackPreview();
       this._cleanup();
       return;
     }
     const targetListitem = this._getListitemElement(event.target as HTMLElement);
+
+    // proceed swap when everything is OK
     this._handleDrop(targetListitem);
     this._cleanup();
   }
 
+  /**
+   * Update DOM on drop
+   * @param target - the element the overlay has been dropped on
+   * @param isPreview - apply changes only temporarily
+   */
   private _handleDrop(target: HTMLElement) {
-    if (!this._draggedElement || target === this._draggedElement) {
-      return;
+    if (!this._draggedElement) return;
+
+    const draggedIndex = Array.from(this._container.children).indexOf(this._draggedElement);
+    const targetIndex = Array.from(this._container.children).indexOf(target);
+
+    if (this._isPreviewActive) {
+      if (this._previewOriginalIndex === null) return;
+      this._commitIndexSwap?.(this._previewOriginalIndex, targetIndex);
+      this._draggedElement.classList.remove('preview');
+    } else {
+      // drop on dragged element is only permitted when preview is activated
+      if (target === this._draggedElement) return;
+
+      // update model
+      this._commitIndexSwap?.(draggedIndex, targetIndex);
+      // update DOM
+      if (draggedIndex < targetIndex) {
+        this._container.insertBefore(this._draggedElement, target.nextElementSibling);
+      } else if (draggedIndex > targetIndex) {
+        this._container.insertBefore(this._draggedElement, target);
+      }
     }
-    const draggedIndex = Array.from(this.container.children).indexOf(this._draggedElement);
-    const targetIndex = Array.from(this.container.children).indexOf(target);
-    this._onDrop?.(draggedIndex, targetIndex);
-    if (draggedIndex < targetIndex) {
-      this.container.insertBefore(this._draggedElement, target.nextSibling);
-    } else if (draggedIndex > targetIndex) {
-      this.container.insertBefore(this._draggedElement, target);
+    this._cleanup();
+  }
+
+  private _triggerPreview(target: HTMLElement) {
+    if (!this._draggedElement || target === this._draggedElement) return;
+    const originalIndex = Array.from(this._container.children).indexOf(this._draggedElement);
+    this._isPreviewActive = true;
+    const targetIndex = Array.from(this._container.children).indexOf(target);
+
+    if (originalIndex < targetIndex) {
+      this._container.insertBefore(this._draggedElement, target.nextElementSibling);
+    } else if (originalIndex > targetIndex) {
+      this._container.insertBefore(this._draggedElement, target);
     }
+    this._draggedElement.classList.add('preview');
+  }
+
+  private _rollbackPreview() {
+    if (!this._draggedElement) return;
+    if (this._rollbackRefEl) {
+      this._container.insertBefore(this._draggedElement, this._rollbackRefEl);
+    } else {
+      this._container.appendChild(this._draggedElement);
+    }
+    this._cleanup();
+    this._draggedElement.classList.remove('preview');
   }
 
   private _onKeyDown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
+      this._rollbackPreview();
       this._cleanup();
     }
   }
@@ -128,21 +189,36 @@ export default class DraggableController {
     const target = event.target as HTMLElement;
     if (target.getAttribute('role') !== 'listitem') return;
     target.classList.add('drag-over');
+
+    this._hoverTimer = window.setTimeout(() => {
+      this._triggerPreview(target);
+    }, 2000);
   }
 
   private _onMouseLeaveListItem(event: MouseEvent) {
     const target = event.target as HTMLElement;
     target.classList.remove('drag-over');
+    if (this._hoverTimer) {
+      clearTimeout(this._hoverTimer);
+      this._hoverTimer = null;
+    }
   }
 
   private _cleanup() {
     this._isDragging = false;
+    this._rollbackRefEl = null;
+    this._previewOriginalIndex = null;
+    this._isPreviewActive = false;
+    if (this._hoverTimer) {
+      clearTimeout(this._hoverTimer);
+      this._hoverTimer = null;
+    }
     if (this._mirrorElement) {
       document.body.removeChild(this._mirrorElement);
       this._mirrorElement = null;
     }
     this._draggedElement = null;
-    this.container.querySelectorAll('.drag-over').forEach((el) => {
+    this._container.querySelectorAll('.drag-over').forEach((el) => {
       el.classList.remove('drag-over');
     });
 
