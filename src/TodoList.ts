@@ -75,8 +75,12 @@ export default class TodoList {
     const item = new TodoItem(content);
     item.onUpdate = this._onUpdate.bind(this);
     item.onDestroy = this._handleDestroy.bind(this);
-    this._todos.push(item);
-    this._containerEl.appendChild(item.el);
+    if (this._todos.length > 0) {
+      this._containerEl.insertBefore(item.el, this._todos[0].el);
+    } else {
+      this._containerEl.appendChild(item.el);
+    }
+    this._todos.unshift(item);
     this._onUpdate();
   }
 
