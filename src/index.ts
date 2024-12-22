@@ -26,7 +26,7 @@ todolist.onUpdate = onTodoListChange;
 
 // register draggable controller
 const dragController = new DraggableController(container);
-dragController.onDrop = todolist.swapItemsByIndex.bind(todolist);
+dragController.onIndexSwap = todolist.swapItemsByIndex.bind(todolist);
 
 /** Handle new TodoItem submission. */
 function handleEnterKey(event: KeyboardEvent) {

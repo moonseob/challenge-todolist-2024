@@ -130,6 +130,9 @@ section#input {
 .list-item.drag-over {
   box-shadow: inset 3px 0 0 var(--color-dragover);
 }
+.list-item.preview {
+  opacity: 0.5;
+}
 
 section#actions {
   padding: 1em 0;
