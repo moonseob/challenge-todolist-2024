@@ -4,6 +4,7 @@ import TodoItem, { ITodoItem } from './TodoItem';
 /** manage TodoItems and reflect changes to DOM */
 export default class TodoList {
   private _todos: TodoItem[] = [];
+  private _currentFilter: ListFilter = 'all';
   /** a callback for side effects. For now it has nothing to do with list itself. */
   private _updateCallback: (() => void) | undefined;
 
@@ -12,6 +13,7 @@ export default class TodoList {
   }
 
   private _onUpdate() {
+    this.setListFilter();
     this._updateCallback?.();
     setTimeout(() => this._saveToLocalStorage()); // To ensure write after all DOM changes are done
     // TODO: sort todos
@@ -41,12 +43,11 @@ export default class TodoList {
       try {
         const todos: ITodoItem[] = JSON.parse(data);
         const fragment = document.createDocumentFragment();
-        todos.forEach(({ id, content, completed, hidden }) => {
+        todos.forEach(({ id, content, completed }) => {
           const item = new TodoItem(content, id);
           item.onUpdate = this._onUpdate.bind(this);
           item.onDestroy = this._handleDestroy.bind(this);
-          if (completed) item.toggleCompleted();
-          item.setHidden(hidden);
+          item.setCompleted(completed);
           this._todos.push(item);
           fragment.appendChild(item.el);
         });
@@ -85,7 +86,10 @@ export default class TodoList {
   }
 
   toggleStatus(id: TodoItem['id']) {
-    this._todos.find((x) => x.id === id)?.toggleCompleted();
+    const todo = this._todos.find((x) => x.id === id);
+    if (todo) {
+      todo.setCompleted(!todo.completed);
+    }
     this._onUpdate();
   }
 
@@ -98,7 +102,8 @@ export default class TodoList {
     this._onUpdate();
   }
 
-  setListFilter(filter: ListFilter) {
+  setListFilter(filter: ListFilter = this._currentFilter) {
+    this._currentFilter = filter;
     for (const item of this._todos) {
       let isHidden = false;
       switch (filter) {
@@ -114,7 +119,7 @@ export default class TodoList {
       }
       item.setHidden(isHidden); // TODO: need to reduce the occurrence of DOM manipulations
     }
-    this._onUpdate();
+    // this._onUpdate();
   }
 
   swapItemsByIndex(draggedIndex: number, targetIndex: number) {

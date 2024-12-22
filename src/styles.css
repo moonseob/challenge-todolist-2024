@@ -121,7 +121,7 @@ section#input {
     flex: 0 0 auto;
   }
 }
-.list-item.completed {
+.list-item[data-status="completed"] {
   color: var(--color-disabled);
   & span {
     text-decoration: line-through;

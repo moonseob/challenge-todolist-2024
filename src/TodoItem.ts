@@ -43,7 +43,7 @@ export default class TodoItem implements ITodoItem {
     li.appendChild(this._controller.el);
     li.appendChild(deleteButton);
     li.classList.add('list-item');
-    li.addEventListener('click', this.toggleCompleted.bind(this)); // TODO: should prevent drag event
+    li.addEventListener('click', () => this.setCompleted(!this.completed)); // TODO: should prevent drag event
     li.setAttribute('role', 'listitem');
     this.el = li;
   }
@@ -56,12 +56,12 @@ export default class TodoItem implements ITodoItem {
     this._onDestroy = cb;
   }
 
-  toggleCompleted() {
-    this.completed = !this.completed;
+  setCompleted(isCompleted: boolean) {
+    this.completed = isCompleted;
     if (this.completed) {
-      this.el.classList.add('completed');
+      this.el.dataset['status'] = 'completed';
     } else {
-      this.el.classList.remove('completed');
+      this.el.dataset['status'] = 'active';
     }
     this.lastUpdatedAt = new Date().valueOf();
     this._onUpdate?.();

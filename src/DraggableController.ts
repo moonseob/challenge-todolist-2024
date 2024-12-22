@@ -46,8 +46,7 @@ export default class DraggableController {
     if (
       listitemElement === null ||
       listitemElement.getAttribute('role') !== 'listitem' ||
-      listitemElement.classList.contains('completed')
-      // TODO: use "data-todo-completed"
+      listitemElement.dataset['status'] === 'completed'
     ) {
       return;
     }
