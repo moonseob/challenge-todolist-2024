@@ -26,7 +26,7 @@ todolist.onUpdate = onTodoListChange;
 /** Handle new TodoItem submission. */
 function handleEnterKey(event: KeyboardEvent) {
   const target = event.target as HTMLInputElement;
-  if (event.key === 'Enter') {
+  if (event.key === 'Enter' && !event.isComposing) {
     if (typeof target.value !== 'string' || target.value.trim() === '') {
       return;
     }
