@@ -5,11 +5,15 @@ type ListitemElement = HTMLElement;
 export default class DraggableController {
   private _container: HTMLElement;
 
-  private _isDragging = false;
   private _offsetX = 0;
   private _offsetY = 0;
   private _draggedElement: HTMLElement | null = null;
   private _mirrorElement: HTMLElement | null = null;
+
+  private _dragThreshold = 5;
+  private _startX = 0;
+  private _startY = 0;
+  private _hasCrossedThreshold = false; // for drag
 
   private _hoverTimer: number | null = null;
   private _isPreviewActive = false;
@@ -50,7 +54,6 @@ export default class DraggableController {
     }
     return result as ListitemElement | null;
   }
-
   private _onMouseDown(event: MouseEvent) {
     const target = event.target as HTMLElement;
     if (target?.tagName === 'BUTTON') return;
@@ -67,29 +70,45 @@ export default class DraggableController {
     this._draggedElement = listitemElement;
     this._rollbackRefEl = listitemElement.nextElementSibling;
     this._previewOriginalIndex = Array.from(this._container.children).indexOf(listitemElement);
-    this._isDragging = true;
 
     // get relative position of cursor with scroll adjustments
     const rect = listitemElement.getBoundingClientRect();
     this._offsetX = event.clientX - (rect.left + window.scrollX);
     this._offsetY = event.clientY - (rect.top + window.scrollY);
-
-    document.body.classList.add('dragging');
-    this._createMirrorElement(listitemElement);
   }
 
   private _onMouseMove(event: MouseEvent) {
-    if (!this._isDragging || !this._mirrorElement) return;
+    if (!this._draggedElement) return;
+
+    if (!this._hasCrossedThreshold) {
+      const deltaX = Math.abs(event.clientX - this._startX);
+      const deltaY = Math.abs(event.clientY - this._startY);
+      const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+
+      if (distance < this._dragThreshold) {
+        return;
+      }
+      document.body.classList.add('dragging');
+      this._hasCrossedThreshold = true;
+      this._createMirrorElement(this._draggedElement);
+    }
+
+    if (!this._mirrorElement) return;
 
     this._mirrorElement.style.left = `${event.clientX - this._offsetX}px`;
     this._mirrorElement.style.top = `${event.clientY - this._offsetY}px`;
   }
 
   private _onMouseUp(event: MouseEvent) {
-    if (!this._isDragging || !this._draggedElement) return;
+    if (!this._draggedElement) return;
+
+    if (!this._mirrorElement) {
+      this._cleanup();
+      return;
+    }
 
     const dropTarget = document.elementFromPoint(event.clientX, event.clientY);
-    if (this._container.contains(dropTarget) === false) {
+    if (!this._container.contains(dropTarget)) {
       console.log('Drag canceled: Mouse left the container.');
       this._rollbackPreview();
       this._cleanup();
@@ -97,7 +116,6 @@ export default class DraggableController {
     }
     const targetListitem = this._getListitemElement(event.target as HTMLElement);
 
-    // proceed swap when everything is OK
     this._handleDrop(targetListitem);
     this._cleanup();
   }
@@ -184,7 +202,7 @@ export default class DraggableController {
   }
 
   private _onMouseEnterListItem(event: MouseEvent) {
-    if (!this._isDragging || !this._draggedElement) return;
+    if (!this._draggedElement) return;
 
     const target = event.target as HTMLElement;
     if (target.getAttribute('role') !== 'listitem') return;
@@ -205,10 +223,10 @@ export default class DraggableController {
   }
 
   private _cleanup() {
-    this._isDragging = false;
     this._rollbackRefEl = null;
     this._previewOriginalIndex = null;
     this._isPreviewActive = false;
+    this._hasCrossedThreshold = false;
     if (this._hoverTimer) {
       clearTimeout(this._hoverTimer);
       this._hoverTimer = null;
