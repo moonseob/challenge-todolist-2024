@@ -62,7 +62,7 @@ export default class DraggableController {
     if (
       listitemElement === null ||
       listitemElement.getAttribute('role') !== 'listitem' ||
-      listitemElement.dataset['status'] === 'completed'
+      (listitemElement.querySelector('input[type=checkbox]') as HTMLInputElement | null)?.checked
     ) {
       return;
     }

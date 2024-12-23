@@ -12,8 +12,9 @@ export default class TodoItem implements ITodoItem {
   private _onUpdate: (() => void) | undefined;
   private _onDestroy: ((id: typeof this.id) => void) | undefined;
 
-  completed = false;
   hidden = false;
+  /** a checkbox to indicate whether the item is completed */
+  checkbox: HTMLInputElement;
   el: HTMLLIElement;
   id: string;
   createdAt: number;
@@ -28,8 +29,17 @@ export default class TodoItem implements ITodoItem {
     this.lastUpdatedAt = now;
     this.id = id || self.crypto.randomUUID();
 
+    // checkbox to mark completed
+    this.checkbox = document.createElement('input');
+    this.checkbox.type = 'checkbox';
+    this.checkbox.addEventListener('change', this._handleCheckboxChange.bind(this));
+    this.checkbox.classList.add('visually-hidden');
+
+    // span element to show content
     this._controller = new DOMController(document.createElement('span'));
     this._controller.update(content);
+
+    // delete button
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';
     deleteButton.classList.add('remove-button');
@@ -40,10 +50,11 @@ export default class TodoItem implements ITodoItem {
     };
 
     const li = document.createElement('li');
+    li.appendChild(this.checkbox);
     li.appendChild(this._controller.el);
     li.appendChild(deleteButton);
     li.classList.add('list-item');
-    li.addEventListener('click', () => this.setCompleted(!this.completed)); // TODO: should prevent drag event
+    li.addEventListener('click', () => this.checkbox.click());
     li.setAttribute('role', 'listitem');
     this.el = li;
   }
@@ -56,26 +67,24 @@ export default class TodoItem implements ITodoItem {
     this._onDestroy = cb;
   }
 
-  setCompleted(isCompleted: boolean) {
-    this.completed = isCompleted;
-    if (this.completed) {
-      this.el.dataset['status'] = 'completed';
-    } else {
-      this.el.dataset['status'] = 'active';
-    }
+  get completed() {
+    return this.checkbox.checked;
+  }
+
+  private _handleCheckboxChange() {
     this.lastUpdatedAt = new Date().valueOf();
+    this.checkbox.ariaLabel = this.checkbox.checked ? 'Mark as active' : 'Mark as completed';
     this._onUpdate?.();
+  }
+
+  setCompleted(isCompleted: boolean) {
+    this.checkbox.checked = isCompleted;
   }
 
   setHidden(isHidden: boolean) {
     this.hidden = isHidden;
     this.el.hidden = this.hidden;
   }
-
-  // update(content: string) {
-  //   this.content = content;
-  //   this.lastUpdatedAt = new Date().valueOf();
-  // }
 
   destroy() {
     this.el.remove();
