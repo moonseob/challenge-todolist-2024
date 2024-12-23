@@ -156,24 +156,24 @@ export default class DraggableController {
     const originalIndex = Array.from(this._container.children).indexOf(this._draggedElement);
     this._isPreviewActive = true;
     const targetIndex = Array.from(this._container.children).indexOf(target);
+    this._draggedElement.classList.add('preview');
 
     if (originalIndex < targetIndex) {
       this._container.insertBefore(this._draggedElement, target.nextElementSibling);
     } else if (originalIndex > targetIndex) {
       this._container.insertBefore(this._draggedElement, target);
     }
-    this._draggedElement.classList.add('preview');
   }
 
   private _rollbackPreview() {
     if (!this._draggedElement) return;
+    this._draggedElement.classList.remove('preview');
     if (this._rollbackRefEl) {
       this._container.insertBefore(this._draggedElement, this._rollbackRefEl);
     } else {
       this._container.appendChild(this._draggedElement);
     }
     this._cleanup();
-    this._draggedElement.classList.remove('preview');
   }
 
   private _onKeyDown(event: KeyboardEvent) {
